@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="290" viewBox="0 0 1120 290" font-family="-apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif">
+  <defs>
+    <marker id="step-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="290" fill="#ffffff"/>
+
+  <g stroke="#cbd5e1" stroke-width="1.3" fill="#f8fafc">
+    <rect x="30" y="60" width="240" height="164" rx="10"/>
+    <rect x="310" y="60" width="240" height="164" rx="10"/>
+    <rect x="590" y="60" width="240" height="164" rx="10"/>
+    <rect x="870" y="60" width="240" height="164" rx="10"/>
+  </g>
+
+  <g fill="#2563eb">
+    <circle cx="58" cy="88" r="13"/>
+    <circle cx="338" cy="88" r="13"/>
+    <circle cx="618" cy="88" r="13"/>
+    <circle cx="898" cy="88" r="13"/>
+  </g>
+  <g fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">
+    <text x="58" y="93">1</text>
+    <text x="338" y="93">2</text>
+    <text x="618" y="93">3</text>
+    <text x="898" y="93">4</text>
+  </g>
+
+  <g font-size="14" font-weight="600" fill="#0f172a">
+    <text x="82" y="93">填一个上游</text>
+    <text x="362" y="93">点右上角启动</text>
+    <text x="642" y="93">复制接入片段</text>
+    <text x="922" y="93">看实时日志</text>
+  </g>
+
+  <g font-size="12" fill="#475569">
+    <text x="50" y="126">协议族选 openai 或 anthropic，</text>
+    <text x="50" y="145">再填 base URL 与 API Key。</text>
+    <text x="50" y="170">空的「上游配置」页上点</text>
+    <text x="50" y="189">「填入两条示例」可一键起</text>
+    <text x="50" y="208">手：claude 与 openai 各一条。</text>
+
+    <text x="330" y="126">代理在同一进程里监听三个</text>
+    <text x="330" y="145">入站端点，默认 127.0.0.1:8787。</text>
+    <text x="330" y="170">改动停止输入后自动落盘，</text>
+    <text x="330" y="189">只有地址/端口/请求体上限</text>
+    <text x="330" y="208">会重启监听，其余热生效。</text>
+
+    <text x="610" y="126">「客户端接入」按当前地址</text>
+    <text x="610" y="145">和密钥生成可复制片段：</text>
+    <text x="610" y="170">Claude Code、OpenAI SDK、</text>
+    <text x="610" y="189">Codex Responses、curl 流式，</text>
+    <text x="610" y="208">每条右侧都有复制按钮。</text>
+
+    <text x="890" y="126">每条请求记录状态码、协议</text>
+    <text x="890" y="145">路径、模型、tokens、总耗时</text>
+    <text x="890" y="170">与首包耗时，还能展开被丢弃</text>
+    <text x="890" y="189">的参数和上游原始响应，</text>
+    <text x="890" y="208">排查映射问题不用猜。</text>
+  </g>
+
+  <g stroke="#94a3b8" stroke-width="1.4" fill="none" marker-end="url(#step-arrow)">
+    <path d="M 274 142 L 306 142"/>
+    <path d="M 554 142 L 586 142"/>
+    <path d="M 834 142 L 866 142"/>
+  </g>
+
+  <text x="30" y="258" font-size="12.5" fill="#64748b">从装好到第一个请求跑通只要这四步；界面里没有账号体系、没有云端服务、没有后台任务。</text>
+</svg>
