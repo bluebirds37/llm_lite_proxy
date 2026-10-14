@@ -1,0 +1,35 @@
+[workspace]
+resolver = "3"
+members = ["crates/protocol", "crates/proxy", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+protocol = { path = "crates/protocol" }
+proxy = { path = "crates/proxy" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "signal", "sync"] }
+axum = { version = "0.8", features = ["json", "macros"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls", "http2", "gzip"] }
+tower-http = { version = "0.6", features = ["cors"] }
+futures = "0.3"
+bytes = "1"
+http = "1"
+arc-swap = "1"
+rstest = "0.24"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+strip = true
+panic = "abort"

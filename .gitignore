@@ -1,0 +1,17 @@
+# 构建产物
+target/
+target-tauri/
+dist/
+node_modules/
+
+# 本地参考实现，不随仓库分发
+litellm-main/
+
+# Tauri 生成物与本机 cargo 镜像配置
+src-tauri/gen/
+.cargo/
+
+# 日志与临时目录
+*.log
+.scratch-docs/
+vibe_images/
