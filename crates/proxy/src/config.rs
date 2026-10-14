@@ -245,7 +245,7 @@ impl Config {
             path: path.to_path_buf(),
             source,
         })?;
-        toml::from_str(&text).map_err(|error| ConfigError::Parse {
+        serde_json::from_str(&text).map_err(|error| ConfigError::Parse {
             path: path.to_path_buf(),
             message: error.to_string(),
         })
@@ -254,11 +254,12 @@ impl Config {
     /// Written through a sibling file so a crash mid-write cannot truncate the
     /// only copy of the operator's keys.
     pub fn save(&self, path: &Path) -> Result<(), ConfigError> {
-        let text = toml::to_string_pretty(self).map_err(|error| ConfigError::Write {
+        let mut text = serde_json::to_string_pretty(self).map_err(|error| ConfigError::Write {
             path: path.to_path_buf(),
             source: io::Error::other(error.to_string()),
         })?;
-        let temp = path.with_extension("toml.tmp");
+        text.push('\n');
+        let temp = path.with_extension("json.tmp");
         std::fs::write(&temp, text).map_err(|source| ConfigError::Write {
             path: path.to_path_buf(),
             source,
@@ -488,23 +489,26 @@ mod tests {
     }
 
     #[test]
-    fn toml_round_trips_a_full_configuration() {
+    fn json_round_trips_a_full_configuration() {
         let config = Config::example();
-        let text = toml::to_string_pretty(&config).unwrap();
-        let parsed: Config = toml::from_str(&text).unwrap();
+        let text = serde_json::to_string_pretty(&config).unwrap();
+        let parsed: Config = serde_json::from_str(&text).unwrap();
         assert_eq!(parsed, config);
         assert_eq!(parsed.providers[0].patterns, vec!["claude*".to_string()]);
     }
 
     #[test]
-    fn a_partial_toml_inherits_defaults() {
-        let parsed: Config = toml::from_str(
-            r#"
-[[providers]]
-name = "local"
-protocol = "openai"
-base_url = "http://127.0.0.1:11434/v1"
-"#,
+    fn a_partial_json_inherits_defaults() {
+        let parsed: Config = serde_json::from_str(
+            r#"{
+  "providers": [
+    {
+      "name": "local",
+      "protocol": "openai",
+      "base_url": "http://127.0.0.1:11434/v1"
+    }
+  ]
+}"#,
         )
         .unwrap();
 

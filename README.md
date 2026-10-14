@@ -100,7 +100,7 @@ Windows 安装包是 NSIS 生成的单文件 `LLM Lite Proxy_x.y.z_x64-setup.exe
 
 ### 主题
 
-右上角的圆形按钮在浅色与深色之间切换，默认跟随系统。选择记在 WebView 的 localStorage 里，不进配置文件——换机器重装不会带过去。
+右上角的圆形按钮在浅色与深色之间切换，默认跟随系统。切换时**窗口标题栏会跟着一起变**（Windows 走 DWM 的沉浸式深色标题栏，实测过；macOS / Linux 由同一套 Tauri 接口处理，未实测），不会出现深色面板顶在浅色标题栏下面的情况。选择记在 WebView 的 localStorage 里，不进配置文件——换机器重装不会带过去。
 
 ![深色主题下的请求日志](docs/images/05-dark-theme.png)
 
@@ -112,50 +112,76 @@ Windows 安装包是 NSIS 生成的单文件 `LLM Lite Proxy_x.y.z_x64-setup.exe
 
 ## 配置文件
 
-配置只有一个位置，三个平台都一样：**`~/.llm_lite_proxy/config.toml`**（Windows 上即 `%USERPROFILE%\.llm_lite_proxy\config.toml`）。首次启动会在这里写一份带示例的配置。
+配置只有一个位置，三个平台都一样：**`~/.llm_lite_proxy/config.json`**（Windows 上即 `%USERPROFILE%\.llm_lite_proxy\config.json`）。首次启动会在这里写一份带示例的配置；JSON 不能写注释，字段含义看下面那张表。
 
-再早一点的版本把文件放在各平台的 app-data 目录（Windows 是 `%APPDATA%\com.llmliteproxy.desktop`）。如果新位置不存在而旧文件在，启动时会自动搬一次，不需要手动复制。
+再早一点的版本用 TOML，而且放在各平台自己的 app-data 目录（Windows 是 `%APPDATA%\com.llmliteproxy.desktop\config.toml`）。启动时如果新位置没有 `config.json`，会依次找 `~/.llm_lite_proxy/config.toml`、旧 app-data 目录里的 `config.json` 与 `config.toml`，取第一个能解析出来的搬过来并写成 JSON，不需要手动复制。
 
-界面底部也会显示当前实际读写的路径。完整字段：
+界面底部也会显示当前实际读写的路径。完整结构：
 
-```toml
-[server]
-host = "127.0.0.1"
-port = 8787
-master_keys = ["<你的代理密钥>"]   # 客户端要带的密钥，留空则不校验
-default_provider = "claude"        # 兜底上游，可留空
-default_max_tokens = 4096          # 客户端没填 max_tokens 时补这个
-passthrough_unknown_params = false # true 时把本项目不认识的参数原样转发
-openai_include_usage = true        # 向 OpenAI 上游索取 usage 块
-request_timeout_secs = 600
-stream_idle_timeout_secs = 120     # 流式响应多久没字节算断
-max_body_mb = 64
-log_capacity = 400
-allow_origins = []                 # 允许跨源的浏览器来源，["*"] 表示全部
-
-[[providers]]
-name = "claude"
-protocol = "anthropic"             # openai | anthropic
-api = "messages"                   # chat | responses | messages，可省
-base_url = "https://api.anthropic.com"
-api_key = "<你的上游密钥>"          # 留空则转发客户端密钥
-enabled = true
-patterns = ["claude*", "sonnet*"]  # 按顺序匹配的 glob
-
-  [[providers.models]]             # 精确别名，优先级高于 patterns
-  public = "claude-pro"
-  upstream = "claude-sonnet-4-5"
-
-  [providers.headers]              # 附加到每次上游请求
-  # anthropic-version = "2023-06-01"
-
-[[providers]]
-name = "openai"
-protocol = "openai"
-base_url = "https://api.openai.com/v1"
-api_key = "<你的上游密钥>"
-patterns = ["gpt-*"]
+```json
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787,
+    "master_keys": ["<你的代理密钥>"],
+    "default_provider": "claude",
+    "default_max_tokens": 4096,
+    "passthrough_unknown_params": false,
+    "openai_include_usage": true,
+    "request_timeout_secs": 600,
+    "stream_idle_timeout_secs": 120,
+    "max_body_mb": 64,
+    "log_capacity": 400,
+    "allow_origins": []
+  },
+  "providers": [
+    {
+      "name": "claude",
+      "protocol": "anthropic",
+      "api": "messages",
+      "base_url": "https://api.anthropic.com",
+      "api_key": "<你的上游密钥>",
+      "enabled": true,
+      "patterns": ["claude*", "sonnet*"],
+      "models": [
+        { "public": "claude-pro", "upstream": "claude-sonnet-4-5" }
+      ],
+      "headers": {}
+    },
+    {
+      "name": "openai",
+      "protocol": "openai",
+      "base_url": "https://api.openai.com/v1",
+      "api_key": "<你的上游密钥>",
+      "patterns": ["gpt-*"]
+    }
+  ]
+}
 ```
+
+除 `providers[].name` 与 `protocol` 之外每个字段都能省略（上面第二条 `openai` 就是这样），缺省值即下表标注：
+
+| 字段 | 含义 | 缺省 |
+| --- | --- | --- |
+| `server.host` / `server.port` | 监听地址与端口；改动会重启监听，进行中的请求会断 | `127.0.0.1` / `8787` |
+| `server.master_keys` | 客户端要带的密钥（`Authorization: Bearer` 或 `x-api-key`） | 空，即不校验 |
+| `server.default_provider` | 兜底上游 | 无 |
+| `server.default_max_tokens` | 客户端没填 `max_tokens` 时补这个 | `4096` |
+| `server.passthrough_unknown_params` | `true` 时把本项目不认识的参数原样转发 | `false` |
+| `server.openai_include_usage` | 向 OpenAI 上游索取 usage 块 | `true` |
+| `server.request_timeout_secs` | 单次请求总超时 | `600` |
+| `server.stream_idle_timeout_secs` | 流式响应多久没字节算断 | `120` |
+| `server.max_body_mb` | 请求体上限；改动会重启监听 | `64` |
+| `server.log_capacity` | 日志保留条数 | `400` |
+| `server.allow_origins` | 允许跨源的浏览器来源，`["*"]` 表示全部 | 空，即浏览器不可跨源 |
+| `providers[].protocol` | `openai` 或 `anthropic`，决定鉴权头与错误体 | 必填 |
+| `providers[].api` | `chat` / `responses` / `messages`，决定调用路径 | 按协议族补 |
+| `providers[].base_url` | 可只填主机、填到 `/v1`，或直接填完整 endpoint 路径 | 该协议族官方地址 |
+| `providers[].api_key` | 上游密钥；留空则把客户端密钥原样转发 | 空 |
+| `providers[].enabled` | 关掉后不参与选路 | `true` |
+| `providers[].patterns` | 按顺序匹配的 glob | 空 |
+| `providers[].models` | 精确别名 `public → upstream`，优先级高于 `patterns` | 空 |
+| `providers[].headers` | 附加到每次上游请求，如 `{"anthropic-version": "2023-06-01"}` | 空 |
 
 ## 从源码运行
 
@@ -201,7 +227,7 @@ macOS / Linux 的系统依赖与 CI 出包见 **[docs/build.md](docs/build.md)**
 ├── crates/
 │   ├── protocol/         纯协议层：三套 wire 类型 + 请求/响应/流式转换器
 │   │                     无 IO、无 async、无 HTTP 依赖，测试是毫秒级
-│   └── proxy/            axum 路由、TOML 配置与校验、模型路由、
+│   └── proxy/            axum 路由、JSON 配置与校验、模型路由、
 │                         reqwest 上游、SSE 管道、日志总线
 ├── docs/                 文档与图片
 └── Cargo.toml            workspace：crates/* + src-tauri
@@ -214,7 +240,7 @@ macOS / Linux 的系统依赖与 CI 出包见 **[docs/build.md](docs/build.md)**
 - 上游协议族只有 OpenAI 兼容与 Anthropic 兼容两类，没有 Bedrock / Vertex / Gemini 的原生签名。
 - Responses ⇄ Messages 经 Chat Completions 中转，两次映射之间的语义间隙（如 Responses 的 `reasoning.encrypted_content` 与 Anthropic 的 thinking 签名）不做保真转换，相关历史会被丢弃并记进日志。
 - 没有重试、负载均衡和多 Key 轮询；一个请求只打一个上游。
-- Key 以明文存在本机 config.toml，桌面端读回时也原样返回给界面——自用场景，机器权限即边界。
+- Key 以明文存在本机 config.json，桌面端读回时也原样返回给界面——自用场景，机器权限即边界。
 - **界面文案目前只有中文**（本仓库的截图也都是中文界面）；协议字段、配置键名与日志内容不受影响。
 - **只监听回环地址时才算安全**；改成 `0.0.0.0` 请务必设置 `master_keys`。
 

@@ -7,7 +7,7 @@ fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("llm-lite-proxy-{name}"));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("a scratch directory");
-    dir.join("config.toml")
+    dir.join("config.json")
 }
 
 fn provider(name: &str) -> Provider {
@@ -91,8 +91,8 @@ fn no_temporary_file_is_left_behind() {
 #[test]
 fn a_broken_file_falls_back_without_throwing() {
     let path = scratch("broken");
-    fs::write(&path, "[[providers]\nname = ").expect("a broken file");
+    fs::write(&path, "{\"providers\": [").expect("a broken file");
 
     let error = Config::load(&path).expect_err("a broken file is reported");
-    assert!(error.to_string().contains("config.toml"), "{error}");
+    assert!(error.to_string().contains("config.json"), "{error}");
 }

@@ -100,7 +100,7 @@ Snippets generated from the current address and key, ready to copy: Claude Code 
 
 ### Theme
 
-The round button in the top-right corner switches between light and dark, following the system by default. The choice lives in the WebView's localStorage, not in the configuration file — so a reinstall on another machine does not carry it over.
+The round button in the top-right corner switches between light and dark, following the system by default. The **window title bar changes with it** (on Windows through DWM's immersive dark title bar, tested; macOS / Linux go through the same Tauri API but are untested), so a dark panel never sits under a light title bar. The choice lives in the WebView's localStorage, not in the configuration file — so a reinstall on another machine does not carry it over.
 
 ![Request logs in the dark theme](docs/images/05-dark-theme.png)
 
@@ -112,50 +112,76 @@ Internally there is only one representation, Chat Completions, and each API surf
 
 ## Configuration file
 
-There is a single configuration location, the same on all three platforms: **`~/.llm_lite_proxy/config.toml`** (on Windows that is `%USERPROFILE%\.llm_lite_proxy\config.toml`). The first launch writes a file containing examples there.
+There is a single configuration location, the same on all three platforms: **`~/.llm_lite_proxy/config.json`** (on Windows that is `%USERPROFILE%\.llm_lite_proxy\config.json`). The first launch writes a file containing examples there. JSON takes no comments, so the field meanings are in the table below.
 
-Older builds kept it in the per-platform app-data directory (on Windows, `%APPDATA%\com.llmliteproxy.desktop`). When the new location is missing and the old file exists, it is carried over once at startup — no manual copying.
+Older builds used TOML, and kept it in the per-platform app-data directory (on Windows, `%APPDATA%\com.llmliteproxy.desktop\config.toml`). When there is no `config.json` at the new location at startup, the app looks in order for `~/.llm_lite_proxy/config.toml`, then `config.json` and `config.toml` in the old app-data directory, and carries the first one it can parse over as JSON — no manual copying.
 
-The bottom of the window also shows the path currently being read and written. All fields:
+The bottom of the window also shows the path currently being read and written. The full shape:
 
-```toml
-[server]
-host = "127.0.0.1"
-port = 8787
-master_keys = ["<your-proxy-key>"] # keys the client must send; empty means no check
-default_provider = "claude"        # fallback upstream, may be left empty
-default_max_tokens = 4096          # used when the client sends no max_tokens
-passthrough_unknown_params = false # when true, parameters this project does not know are forwarded as they are
-openai_include_usage = true        # ask OpenAI upstreams for a usage block
-request_timeout_secs = 600
-stream_idle_timeout_secs = 120     # how long a stream may go without bytes before it counts as broken
-max_body_mb = 64
-log_capacity = 400
-allow_origins = []                 # browser origins allowed to call cross-origin, ["*"] means all
-
-[[providers]]
-name = "claude"
-protocol = "anthropic"             # openai | anthropic
-api = "messages"                   # chat | responses | messages, optional
-base_url = "https://api.anthropic.com"
-api_key = "<your-upstream-key>"    # empty means the client's key is forwarded
-enabled = true
-patterns = ["claude*", "sonnet*"]  # glob patterns, matched in order
-
-  [[providers.models]]             # exact aliases, take priority over patterns
-  public = "claude-pro"
-  upstream = "claude-sonnet-4-5"
-
-  [providers.headers]              # appended to every upstream request
-  # anthropic-version = "2023-06-01"
-
-[[providers]]
-name = "openai"
-protocol = "openai"
-base_url = "https://api.openai.com/v1"
-api_key = "<your-upstream-key>"
-patterns = ["gpt-*"]
+```json
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787,
+    "master_keys": ["<your-proxy-key>"],
+    "default_provider": "claude",
+    "default_max_tokens": 4096,
+    "passthrough_unknown_params": false,
+    "openai_include_usage": true,
+    "request_timeout_secs": 600,
+    "stream_idle_timeout_secs": 120,
+    "max_body_mb": 64,
+    "log_capacity": 400,
+    "allow_origins": []
+  },
+  "providers": [
+    {
+      "name": "claude",
+      "protocol": "anthropic",
+      "api": "messages",
+      "base_url": "https://api.anthropic.com",
+      "api_key": "<your-upstream-key>",
+      "enabled": true,
+      "patterns": ["claude*", "sonnet*"],
+      "models": [
+        { "public": "claude-pro", "upstream": "claude-sonnet-4-5" }
+      ],
+      "headers": {}
+    },
+    {
+      "name": "openai",
+      "protocol": "openai",
+      "base_url": "https://api.openai.com/v1",
+      "api_key": "<your-upstream-key>",
+      "patterns": ["gpt-*"]
+    }
+  ]
+}
 ```
+
+Every field except `providers[].name` and `protocol` may be omitted (the second entry above does), and the defaults are the ones listed here:
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `server.host` / `server.port` | Listen address and port; changing them restarts the listener and cuts requests in flight | `127.0.0.1` / `8787` |
+| `server.master_keys` | Keys the client must send (`Authorization: Bearer` or `x-api-key`) | empty, i.e. no check |
+| `server.default_provider` | Fallback upstream | none |
+| `server.default_max_tokens` | Used when the client sends no `max_tokens` | `4096` |
+| `server.passthrough_unknown_params` | When `true`, parameters this project does not know are forwarded as they are | `false` |
+| `server.openai_include_usage` | Ask OpenAI upstreams for a usage block | `true` |
+| `server.request_timeout_secs` | Overall timeout for one request | `600` |
+| `server.stream_idle_timeout_secs` | How long a stream may go without bytes before it counts as broken | `120` |
+| `server.max_body_mb` | Request body limit; changing it restarts the listener | `64` |
+| `server.log_capacity` | Number of log entries kept | `400` |
+| `server.allow_origins` | Browser origins allowed to call cross-origin, `["*"]` means all | empty, so browsers are blocked |
+| `providers[].protocol` | `openai` or `anthropic`; decides the auth headers and the error body | required |
+| `providers[].api` | `chat` / `responses` / `messages`; decides the call path | filled in per family |
+| `providers[].base_url` | May be just the host, the host down to `/v1`, or the full endpoint path | the official address of that family |
+| `providers[].api_key` | Upstream key; left empty, the client's key is forwarded | empty |
+| `providers[].enabled` | A disabled upstream takes no part in routing | `true` |
+| `providers[].patterns` | Glob patterns, matched in order | empty |
+| `providers[].models` | Exact aliases `public → upstream`, taking priority over `patterns` | empty |
+| `providers[].headers` | Headers appended to every upstream request, e.g. `{"anthropic-version": "2023-06-01"}` | empty |
 
 ## Running from source
 
@@ -201,7 +227,7 @@ A standard Tauri 2 layout: the repository root is the frontend, `src-tauri/` is 
 ├── crates/
 │   ├── protocol/         pure protocol layer: three sets of wire types + request/response/streaming converters
 │   │                     no IO, no async, no HTTP dependency; tests run in milliseconds
-│   └── proxy/            axum routing, TOML config and validation, model routing,
+│   └── proxy/            axum routing, JSON config and validation, model routing,
 │                         reqwest upstream, SSE pipeline, log bus
 ├── docs/                 documentation and images
 └── Cargo.toml            workspace: crates/* + src-tauri
@@ -214,7 +240,7 @@ A standard Tauri 2 layout: the repository root is the frontend, `src-tauri/` is 
 - The only upstream protocol families are OpenAI-compatible and Anthropic-compatible; there is no native signing for Bedrock / Vertex / Gemini.
 - Responses ⇄ Messages goes through Chat Completions as an intermediate, so the semantic gap between the two mappings (for instance Responses' `reasoning.encrypted_content` versus Anthropic's thinking signature) is not converted faithfully; the history involved is dropped and recorded in the log.
 - No retries, no load balancing, no round-robin over multiple keys; one request hits one upstream only.
-- Keys are stored in plaintext in the local config.toml, and the desktop side returns them as-is when reading them back for the UI — this is for self use, and the machine's file permissions are the boundary.
+- Keys are stored in plaintext in the local config.json, and the desktop side returns them as-is when reading them back for the UI — this is for self use, and the machine's file permissions are the boundary.
 - **The interface text is Chinese-only today** (the screenshots in this repository show the Chinese UI); protocol fields, configuration keys and log contents are unaffected.
 - **It is only safe while listening on a loopback address**; if you switch to `0.0.0.0`, make sure `master_keys` is set.
 

@@ -553,7 +553,7 @@ function apiKeyField(provider: Provider): HTMLElement {
     reveal.textContent = hidden ? "隐藏" : "显示";
   });
   row.append(input, reveal);
-  return field("API Key", row, "保存在本机配置目录的 config.toml 里");
+  return field("API Key", row, "保存在本机配置目录的 config.json 里");
 }
 
 function modelsEditor(provider: Provider): HTMLElement {
@@ -906,7 +906,11 @@ async function boot(): Promise<void> {
     });
   });
 
-  initThemeToggle($("#theme-toggle"));
+  initThemeToggle($("#theme-toggle"), (explicit) => {
+    if (!inTauri) return;
+    // The CSS only paints the client area; the title bar needs the same call.
+    void call("set_window_theme", { theme: explicit }).catch(() => undefined);
+  });
   $("#save").addEventListener("click", () => void save());
   $("#toggle-run").addEventListener("click", () => void toggleRunning());
   $("#address").addEventListener("click", () => void navigator.clipboard.writeText(baseUrl()).then(() => toast("已复制 base URL")));

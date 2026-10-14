@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
-use tauri::{Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use proxy::{Config, LogBus, LogEntry, Probe, Provider, Proxy, Stats};
 
@@ -26,24 +26,43 @@ fn config_dir(handle: &tauri::AppHandle) -> PathBuf {
     home.join(".llm_lite_proxy")
 }
 
-/// Carries an existing file over from the old platform-specific location so an
-/// upgrade does not look like a first run with an empty config.
+/// Carries an existing file over so an upgrade does not look like a first run
+/// with an empty config: the JSON file may still sit in the old app-data
+/// directory, and the release before that stored TOML in either location.
 fn migrate_legacy_config(handle: &tauri::AppHandle, path: &std::path::Path) {
     if path.exists() {
         return;
     }
-    let Ok(directory) = handle.path().app_config_dir() else {
-        return;
-    };
-    let legacy = directory.join("config.toml");
-    if legacy.is_file() {
-        let _ = std::fs::copy(legacy, path);
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(directory) = path.parent() {
+        candidates.push(directory.join("config.toml"));
+    }
+    if let Ok(directory) = handle.path().app_config_dir() {
+        candidates.push(directory.join("config.json"));
+        candidates.push(directory.join("config.toml"));
+    }
+
+    for candidate in candidates {
+        if !candidate.is_file() {
+            continue;
+        }
+        let carried = match candidate.extension().and_then(|ext| ext.to_str()) {
+            Some("toml") => std::fs::read_to_string(&candidate)
+                .ok()
+                .and_then(|text| toml::from_str::<Config>(&text).ok())
+                .is_some_and(|config| config.save(path).is_ok()),
+            _ => std::fs::copy(&candidate, path).is_ok(),
+        };
+        if carried {
+            return;
+        }
     }
 }
 
 /// Loads the configuration, and when the file cannot be parsed keeps a copy and
 /// says so instead of silently starting over with the example config.
-fn load_or_repair(path: &std::path::Path) -> (Config, Option<String>) {    if !path.exists() {
+fn load_or_repair(path: &std::path::Path) -> (Config, Option<String>) {
+    if !path.exists() {
         let example = Config::example();
         let _ = example.save(path);
         return (example, None);
@@ -51,7 +70,7 @@ fn load_or_repair(path: &std::path::Path) -> (Config, Option<String>) {    if !p
     match Config::load(path) {
         Ok(config) => (config, None),
         Err(error) => {
-            let backup = path.with_extension("toml.invalid");
+            let backup = path.with_extension("json.invalid");
             let _ = std::fs::copy(path, &backup);
             (
                 Config::example(),
@@ -218,6 +237,22 @@ fn open_config_path(app: State<'_, App>) -> String {
     app.path.display().to_string()
 }
 
+/// Paints the native title bar to match the panel. `null` hands the choice back
+/// to the system, which is what an operator who never touched the toggle wants.
+#[tauri::command]
+fn set_window_theme(app: AppHandle, theme: Option<String>) -> Result<(), String> {
+    let theme = match theme.as_deref() {
+        None => None,
+        Some("light") => Some(tauri::Theme::Light),
+        Some("dark") => Some(tauri::Theme::Dark),
+        Some(other) => return Err(format!("unknown theme `{other}`")),
+    };
+    let Some(window) = app.get_webview_window("main") else {
+        return Ok(());
+    };
+    window.set_theme(theme).map_err(|error| error.to_string())
+}
+
 pub fn run() {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
@@ -229,7 +264,7 @@ pub fn run() {
             let handle = app.handle().clone();
             let directory = config_dir(&handle);
             std::fs::create_dir_all(&directory).ok();
-            let path = directory.join("config.toml");
+            let path = directory.join("config.json");
             migrate_legacy_config(&handle, &path);
 
             let (config, warning) = load_or_repair(&path);
@@ -278,7 +313,8 @@ pub fn run() {
             test_provider,
             recent_logs,
             stats,
-            open_config_path
+            open_config_path,
+            set_window_theme
         ])
         .run(tauri::generate_context!())
         .expect("the desktop app runs");
@@ -299,7 +335,7 @@ mod tests {
         config.server.host = "127.0.0.1".into();
         config.server.port = port;
         App {
-            path: std::env::temp_dir().join("llm-lite-proxy-test.toml"),
+            path: std::env::temp_dir().join("llm-lite-proxy-test.json"),
             logs: LogBus::new(64),
             config: Mutex::new(config),
             proxy: Mutex::new(None),
@@ -423,7 +459,7 @@ mod tests {
         let dir = std::env::temp_dir().join("llm-lite-proxy-first-run");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("a scratch directory");
-        let path = dir.join("config.toml");
+        let path = dir.join("config.json");
 
         let (config, warning) = load_or_repair(&path);
         assert!(warning.is_none());
@@ -439,26 +475,21 @@ mod tests {
         let dir = std::env::temp_dir().join("llm-lite-proxy-unreadable");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("a scratch directory");
-        let path = dir.join("config.toml");
+        let path = dir.join("config.json");
         // A known field with the wrong type is what a hand edit usually breaks.
-        let broken = "[server]
-port = \"8787\"
-
-[[providers]]
-name = \"mine\"
-";
+        let broken = r#"{"server": {"port": "8787"}, "providers": [{"name": "mine"}]}"#;
         std::fs::write(&path, broken).expect("a broken file");
 
         let (config, warning) = load_or_repair(&path);
         let warning = warning.expect("the problem is reported");
-        assert!(warning.contains("toml.invalid"), "{warning}");
+        assert!(warning.contains("json.invalid"), "{warning}");
         assert_eq!(
             config.providers.len(),
             2,
             "the example keeps the app usable"
         );
 
-        let backup = path.with_extension("toml.invalid");
+        let backup = path.with_extension("json.invalid");
         assert_eq!(
             std::fs::read_to_string(&backup).expect("the original is kept"),
             broken,
