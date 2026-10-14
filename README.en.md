@@ -5,7 +5,7 @@
 A **two-way OpenAI ⇄ Anthropic protocol proxy** that runs on your own machine, with a configuration window.
 Fill in the upstream, fill in the key, press Start. From then on either side works no matter which protocol it speaks: a client can hit Claude through `/v1/chat/completions`, or hit GPT through `/v1/messages`, without changing a single line of client code.
 
-> **This is a pure code tool.** No accounts, no cloud service, no database, no background jobs, and no retries, round-robin or load balancing.
+> **This is a pure LLM proxy tool.** No accounts, no cloud service, no database, no background jobs, and no retries, round-robin or load balancing.
 > It does one thing: translate the request body from one protocol into the other, then translate the response back. All the code is in this repository, and the backend is pure Rust.
 
 ![Upstream configuration panel](docs/images/01-upstream-config.png)
