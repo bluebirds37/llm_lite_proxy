@@ -679,92 +679,65 @@ pre {
   height: 100%;
 }
 
-.split {
-  display: grid;
-  grid-template-columns: 246px minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
-  min-height: 0;
-}
-
-#panel-providers .split {
-  flex: 1;
-  min-height: 0;
-}
-
-.side {
-  padding: 13px;
+/* Upstream cards: a responsive grid of summaries. The card being configured
+   spans the whole row so its form has room, the rest stay as one-line cards. */
+#panel-providers > .card {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  align-items: flex-start;
+  gap: 9px;
 }
 
-.side .head {
-  margin-bottom: 10px;
-}
-
-.plist {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-
-.prow {
+.cards {
   display: grid;
-  grid-template-columns: 9px minmax(0, 1fr);
-  grid-template-areas:
-    "dot name"
-    "dot count";
-  align-items: center;
-  gap: 2px 9px;
-  padding: 8px 10px;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.pcard {
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  cursor: pointer;
-  transition: background 0.14s ease, border-color 0.14s ease;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  container-type: inline-size;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
 }
 
-.prow:hover {
-  background: var(--surface-3);
+.pcard:hover {
   border-color: var(--border-strong);
 }
 
-.prow.active {
-  background: var(--accent-soft);
+.pcard.open {
+  grid-column: 1 / -1;
   border-color: var(--accent);
+  box-shadow: var(--shadow);
 }
 
-.prow .name {
-  grid-area: name;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12.5px;
-  font-weight: 550;
+.pcard.off .pcard-name,
+.pcard.off .pcard-meta {
+  opacity: 0.55;
 }
 
-.prow.active .name {
-  color: var(--accent);
+.pcard-head {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "dot name switch chevron"
+    ".   meta meta   meta";
+  align-items: center;
+  gap: 3px 10px;
+  padding: 12px 14px;
+  cursor: pointer;
 }
 
-.prow .count {
-  grid-area: count;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.pcard.open .pcard-head {
+  border-bottom: 1px solid var(--border);
+  cursor: default;
 }
 
-.prow .dot {
+.pcard .dot {
   grid-area: dot;
-  align-self: center;
 }
 
 .dot {
@@ -779,47 +752,147 @@ pre {
   box-shadow: 0 0 0 3px var(--good-soft);
 }
 
-/* The editor is a frame with a fixed header and its own scrolling body, so
-   nothing can scroll behind the header and no negative margins are needed. */
-#panel-providers .split > .card:last-child {
-  padding: 0;
+.pcard-head .switch {
+  grid-area: switch;
+}
+
+.pcard-name {
+  grid-area: name;
+  min-width: 0;
+  height: 30px;
+  padding: 0 7px;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  background: transparent;
+  border-color: transparent;
+}
+
+.pcard-name:hover {
+  border-color: var(--border);
+}
+
+.pcard-name:focus {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.pcard-meta {
+  grid-area: meta;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  grid-area: chevron;
+  height: 28px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.chevron:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.pcard.open .chevron {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+}
+
+.pcard-body {
+  padding: 16px 16px 14px;
+}
+
+.pcard-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.pcard-foot .probe {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.pcard-foot .inline {
+  flex: none;
+}
+
+.pcard.add {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.pcard.add:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.add-inner {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  container-type: inline-size;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 22px 14px 26px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
 }
 
-#panel-providers .split > .card:last-child .head {
-  position: static;
-  flex: none;
-  min-height: 60px;
-  margin: 0;
-  padding: 13px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  z-index: 2;
+.add-glyph {
+  font-size: 21px;
+  line-height: 1;
+  color: var(--accent);
 }
 
-#panel-providers .split > .card:last-child .head button {
-  height: 32px;
+.add-label {
+  font-size: 13px;
+  font-weight: 650;
 }
 
-#panel-providers .split > .card:last-child .switch {
-  height: 32px;
-  padding-right: 2px;
+.switch-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-#panel-providers .split > .card:last-child .title-input {
-  height: 34px;
+.switch-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
 }
 
-.detail-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 17px 16px 20px;
+.switch-row .switch {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.switch-row .hint {
+  line-height: 1.5;
 }
 
 .scroller {
@@ -948,44 +1021,12 @@ td.num {
   }
 }
 
-/* ---------- upstream editor ---------- */
-
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
-
-.title-input {
-  flex: 1;
-  min-width: 0;
-  height: 32px;
-  padding: 0 8px;
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  background: transparent;
-  border-color: transparent;
-}
-
-.title-input:hover {
-  border-color: var(--border);
-}
-
-.title-input:focus {
-  background: var(--surface-2);
-  border-color: var(--accent);
-}
+/* ---------- grouped form sections ---------- */
 
 .sections {
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-.detail-body > .probe {
-  margin-top: 14px;
 }
 
 .section {
@@ -998,7 +1039,7 @@ td.num {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding-bottom: 8px;
+  padding-bottom: 11px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -1012,8 +1053,8 @@ td.num {
 
 .fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 11px;
+  grid-template-columns: repeat(auto-fit, minmax(218px, 1fr));
+  gap: 12px 14px;
 }
 
 .span-2 {

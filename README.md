@@ -74,6 +74,8 @@ Windows 安装包是 NSIS 生成的单文件 `LLM Lite Proxy_x.y.z_x64-setup.exe
 
 ![上游配置：协议族、API 面、Base URL、Key、模型别名与匹配模式](docs/images/01-upstream-config.png)
 
+每个上游是一张卡片：卡片头上能直接改名、看到协议摘要、开关启用状态；点卡片（或右侧的「配置」按钮）就地展开完整表单，展开的那一张会占满整行，最后一张虚线卡片是「添加上游」。
+
 可填的东西都在这一页：启用开关、匹配模式（glob）、模型别名表（`public → upstream`）、附加请求头（网关要求的 `anthropic-version`、`User-Agent` 之类）。「测试连通」按当前填写的内容打一次真实请求，不用先保存。
 
 ### 代理设置

@@ -197,7 +197,7 @@ async function refresh(): Promise<void> {
   }
 }
 
-let selected = 0;
+let selected: number | null = 0;
 // Keyed by position, so renaming or duplicating an upstream keeps its result.
 const probes = new Map<number, { ok: boolean; text: string }>();
 
@@ -243,21 +243,29 @@ function defaultBaseUrl(api: Api): string {
 }
 
 function providerSummary(provider: Provider): string {
-  const bits: string[] = [apiOf(provider)];
-  if (provider.models.length) bits.push(`${provider.models.length} 个别名`);
-  if (provider.patterns.length) bits.push(`${provider.patterns.length} 个模式`);
+  const bits: string[] = [provider.protocol, apiOf(provider)];
+  if (provider.models.length) bits.push(`${provider.models.length} 别名`);
+  if (provider.patterns.length) bits.push(`${provider.patterns.length} 匹配`);
+  const headers = Object.keys(provider.headers).length;
+  if (headers) bits.push(`${headers} 请求头`);
   return bits.join(" · ");
 }
 
 function renderProviders(): void {
   const host = $("#panel-providers");
   host.textContent = "";
-  if (selected >= draft.providers.length) selected = Math.max(0, draft.providers.length - 1);
+  if (selected !== null && selected >= draft.providers.length) {
+    selected = draft.providers.length ? draft.providers.length - 1 : null;
+  }
+  if (!draft.providers.length) {
+    host.append(emptyProviders());
+    return;
+  }
 
-  const split = el("div", "split");
-  split.append(providerList());
-  split.append(draft.providers.length ? providerDetail(selected) : emptyProviders());
-  host.append(split);
+  const grid = el("div", "cards");
+  draft.providers.forEach((_, index) => grid.append(providerCard(index)));
+  grid.append(addCard());
+  host.append(grid);
 }
 
 function emptyProviders(): HTMLElement {
@@ -304,60 +312,27 @@ function seedExamples(): void {
   renderProviders();
 }
 
-function providerList(): HTMLElement {
-  const box = el("div", "card side");
-  const head = el("div", "head");
-  const title = el("h3");
-  title.textContent = `上游 (${draft.providers.length})`;
-  const add = el("button", "small primary");
-  add.type = "button";
-  add.textContent = "+ 添加";
-  add.addEventListener("click", () => {
+function addCard(): HTMLElement {
+  const card = el("article", "pcard add");
+  const button = el("button", "add-inner");
+  button.type = "button";
+  const glyph = el("span", "add-glyph");
+  glyph.textContent = "+";
+  const label = el("span", "add-label");
+  label.textContent = "添加上游";
+  const hint = el("span", "hint");
+  hint.textContent = "一个上游就是一个模型服务";
+  button.append(glyph, label, hint);
+  button.addEventListener("click", () => {
     draft.providers.push(newProvider(draft.providers.length));
     selected = draft.providers.length - 1;
     renderProviders();
-    document.querySelector<HTMLInputElement>("#panel-providers input[data-name]")?.focus();
+    document
+      .querySelector<HTMLInputElement>("#panel-providers .pcard.open input[data-name]")
+      ?.focus();
   });
-  head.append(title, add);
-
-  const list = el("div", "plist");
-  draft.providers.forEach((provider, index) => {
-    const row = el("div", index === selected ? "prow active" : "prow");
-    row.dataset.row = String(index);
-    const dot = el("span", provider.enabled ? "dot on" : "dot");
-    const name = el("span", "name");
-    name.textContent = provider.name || "(未命名)";
-    const meta = el("span", "count");
-    meta.textContent = providerSummary(provider);
-    row.append(dot, name, meta);
-    row.addEventListener("click", () => {
-      selected = index;
-      renderProviders();
-    });
-    list.append(row);
-  });
-
-  box.append(head, list);
-  if (draft.providers.length) {
-    const note = el("p", "hint");
-    note.textContent = "点一行到右边编辑，保存即生效。";
-    box.append(note);
-  }
-  return box;
-}
-
-function syncRow(index: number): void {
-  const row = document.querySelector<HTMLElement>(
-    `#panel-providers .prow[data-row="${index}"]`,
-  );
-  const provider = draft.providers[index];
-  if (!row || !provider) return;
-  const name = row.querySelector(".name");
-  if (name) name.textContent = provider.name || "(未命名)";
-  const dot = row.querySelector(".dot");
-  if (dot) dot.className = provider.enabled ? "dot on" : "dot";
-  const count = row.querySelector(".count");
-  if (count) count.textContent = providerSummary(provider);
+  card.append(button);
+  return card;
 }
 
 function section(title: string, hint: string, fields: HTMLElement[]): HTMLElement {
@@ -379,19 +354,50 @@ function wide(node: HTMLElement): HTMLElement {
   return node;
 }
 
-function providerDetail(index: number): HTMLElement {
+function providerCard(index: number): HTMLElement {
   const provider = draft.providers[index];
-  const card = el("div", "card");
+  const open = selected === index;
+  const card = el("article", open ? "pcard open" : provider.enabled ? "pcard" : "pcard off");
 
-  const title = el("input", "title-input");
-  title.type = "text";
-  title.value = provider.name;
-  title.placeholder = "给这个上游起个名字";
-  title.dataset.name = "1";
-  title.addEventListener("input", () => {
-    provider.name = title.value;
-    syncRow(index);
+  const head = el("div", "pcard-head");
+  const dot = el("span", provider.enabled ? "dot on" : "dot");
+
+  const name = el("input", "pcard-name");
+  name.type = "text";
+  name.value = provider.name;
+  name.placeholder = "给这个上游起个名字";
+  name.dataset.name = "1";
+  name.addEventListener("input", () => {
+    provider.name = name.value;
   });
+
+  const meta = el("span", "pcard-meta");
+  meta.textContent = providerSummary(provider);
+
+  const enable = toggle("启用", provider.enabled, (next) => {
+    provider.enabled = next;
+    dot.className = next ? "dot on" : "dot";
+    card.classList.toggle("off", !next);
+  });
+
+  const expand = el("button", "chevron");
+  expand.type = "button";
+  expand.setAttribute("aria-expanded", String(open));
+  expand.textContent = open ? "收起" : "配置";
+  expand.addEventListener("click", () => {
+    selected = open ? null : index;
+    renderProviders();
+  });
+
+  head.append(dot, name, meta, enable, expand);
+  head.addEventListener("click", (event) => {
+    // Renaming or flipping the switch must not collapse the card behind the cursor.
+    if ((event.target as HTMLElement).closest("input, button, label, select")) return;
+    selected = open ? null : index;
+    renderProviders();
+  });
+  card.append(head);
+  if (!open) return card;
 
   const probe = el("div", "probe");
   const remembered = probes.get(index);
@@ -439,24 +445,14 @@ function providerDetail(index: number): HTMLElement {
   remove.textContent = "删除";
   remove.addEventListener("click", () => {
     draft.providers.splice(index, 1);
-    selected = Math.max(0, index - 1);
+    selected = draft.providers.length ? Math.min(index, draft.providers.length - 1) : null;
     renderProviders();
   });
 
-  const actions = el("div", "head-actions");
-  actions.append(
-    toggle("启用", provider.enabled, (next) => {
-      provider.enabled = next;
-      syncRow(index);
-    }),
-    test,
-    duplicate,
-    remove,
-  );
+  const actions = el("div", "inline");
+  actions.append(test, duplicate, remove);
 
-  const head = el("div", "head");
-  head.append(title, actions);
-
+  const body = el("div", "pcard-body");
   const sections = el("div", "sections");
   sections.append(
     section("接口", "协议族决定鉴权头与错误体形态，API 面决定调用路径与转换方式。", [
@@ -518,7 +514,7 @@ function providerDetail(index: number): HTMLElement {
                 .split(",")
                 .map((item) => item.trim())
                 .filter(Boolean);
-              syncRow(index);
+              meta.textContent = providerSummary(provider);
             },
             "claude*, gpt-*",
           ),
@@ -526,11 +522,15 @@ function providerDetail(index: number): HTMLElement {
       ),
       wide(modelsEditor(provider)),
     ]),
+    section("附加请求头", "每次上游请求都会带上，例如网关要求的 anthropic-version 或 User-Agent。", [
+      wide(headersEditor(provider)),
+    ]),
   );
 
-  const body = el("div", "detail-body");
-  body.append(sections, probe);
-  card.append(head, body);
+  const foot = el("div", "pcard-foot");
+  foot.append(probe, actions);
+  body.append(sections, foot);
+  card.append(body);
   return card;
 }
 
@@ -625,6 +625,86 @@ function modelsEditor(provider: Provider): HTMLElement {
   return wrap;
 }
 
+function headersEditor(provider: Provider): HTMLElement {
+  const wrap = el("div", "rows-editor");
+  const label = el("span", "field-label");
+  label.textContent = "附加请求头（名字 → 值）";
+  wrap.append(label);
+
+  const table = el("table", "rows-table");
+  const head = el("thead");
+  const headRow = el("tr");
+  for (const caption of ["名字", "值", ""]) {
+    const cell = el("th");
+    cell.textContent = caption;
+    headRow.append(cell);
+  }
+  head.append(headRow);
+
+  const body = el("tbody");
+  for (const [key, value] of Object.entries(provider.headers)) {
+    let current = key;
+    const row = el("tr");
+
+    const nameCell = el("td");
+    nameCell.append(
+      textInput(
+        key,
+        (next) => {
+          const name = next.trim();
+          // A nameless header would fail on the way out to the upstream.
+          if (!name || name === current) return;
+          const kept = provider.headers[current];
+          delete provider.headers[current];
+          provider.headers[name] = kept;
+          current = name;
+        },
+        "anthropic-version",
+      ),
+    );
+
+    const valueCell = el("td");
+    valueCell.append(
+      textInput(
+        value,
+        (next) => {
+          provider.headers[current] = next;
+        },
+        "2023-06-01",
+      ),
+    );
+
+    const actionCell = el("td", "actions");
+    actionCell.append(
+      rowRemove(() => {
+        delete provider.headers[current];
+        renderProviders();
+      }),
+    );
+
+    row.append(nameCell, valueCell, actionCell);
+    body.append(row);
+  }
+  table.append(head, body);
+  wrap.append(table);
+
+  if (!Object.keys(provider.headers).length) {
+    const empty = el("p", "hint");
+    empty.textContent = "没有附加请求头。大多数网关不需要这一步。";
+    wrap.append(empty);
+  }
+
+  const add = el("button", "small ghost");
+  add.type = "button";
+  add.textContent = "+ 添加请求头";
+  add.addEventListener("click", () => {
+    provider.headers["X-"] = "";
+    renderProviders();
+  });
+  wrap.append(add);
+  return wrap;
+}
+
 function rowRemove(onClick: () => void): HTMLButtonElement {
   const button = el("button", "small danger");
   button.type = "button";
@@ -633,6 +713,22 @@ function rowRemove(onClick: () => void): HTMLButtonElement {
   button.addEventListener("click", onClick);
   return button;
 }
+function switchRow(
+  title: string,
+  hint: string,
+  value: boolean,
+  onChange: (next: boolean) => void,
+): HTMLElement {
+  const row = el("div", "switch-row");
+  row.append(toggle(title, value, onChange));
+  if (hint) {
+    const note = el("p", "hint");
+    note.textContent = hint;
+    row.append(note);
+  }
+  return row;
+}
+
 function renderServer(): void {
   const host = $("#panel-server");
   host.textContent = "";
@@ -657,68 +753,100 @@ function renderServer(): void {
     draft.server.port = next;
   });
 
-  const grid = el("div", "grid");
-  grid.append(
-    field("监听地址", hostInput, "改动会自动保存并切换监听"),
-    field("端口", portInput, "改动会自动保存并切换监听"),
-    field(
-      "客户端密钥（逗号分隔，留空则不校验）",
-      textInput(draft.server.master_keys.join(", "), (next) => {
-        draft.server.master_keys = next
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
-      }),
-      "客户端把它填到 Authorization: Bearer 或 x-api-key",
-    ),
-    field("兜底上游", selectInput(
-      [
-        { value: "", label: "不指定" },
-        ...draft.providers.map((provider) => ({ value: provider.name, label: provider.name })),
-      ],
-      draft.server.default_provider ?? "",
-      (next) => {
-        draft.server.default_provider = next || null;
-      },
-    )),
-    field("默认 max_tokens（客户端没填时）", numberInput(draft.server.default_max_tokens, (next) => {
-      draft.server.default_max_tokens = next;
-    })),
-    field("请求总超时（秒）", numberInput(draft.server.request_timeout_secs, (next) => {
-      draft.server.request_timeout_secs = next;
-    })),
-    field("流式空闲超时（秒）", numberInput(draft.server.stream_idle_timeout_secs, (next) => {
-      draft.server.stream_idle_timeout_secs = next;
-    })),
-    field("请求体上限（MB）", numberInput(draft.server.max_body_mb, (next) => {
-      draft.server.max_body_mb = next;
-    })),
-    field("日志保留条数", numberInput(draft.server.log_capacity, (next) => {
-      draft.server.log_capacity = next;
-    })),
-    field(
-      "允许跨源的浏览器来源",
-      textInput(draft.server.allow_origins.join(", "), (next) => {
-        draft.server.allow_origins = next
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
-      },
-        "例如 http://localhost:1420，或填 *",
-    )),
+  const sections = el("div", "sections");
+  sections.append(
+    section("监听", "地址填 0.0.0.0 会让局域网内其他机器也能访问，请务必设置客户端密钥。", [
+      field("监听地址", hostInput, "改动会自动保存并切换监听"),
+      field("端口", portInput, "改动会自动保存并切换监听"),
+    ]),
+    section("鉴权与路由", "两边都留空时：客户端不校验，上游用客户端自带的 key。", [
+      wide(
+        field(
+          "客户端密钥（逗号分隔，留空则不校验）",
+          textInput(draft.server.master_keys.join(", "), (next) => {
+            draft.server.master_keys = next
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean);
+          }),
+          "客户端把它填到 Authorization: Bearer 或 x-api-key",
+        ),
+      ),
+      field(
+        "兜底上游",
+        selectInput(
+          [
+            { value: "", label: "不指定" },
+            ...draft.providers.map((provider) => ({ value: provider.name, label: provider.name })),
+          ],
+          draft.server.default_provider ?? "",
+          (next) => {
+            draft.server.default_provider = next || null;
+          },
+        ),
+        "模型名谁都没命中时走它",
+      ),
+    ]),
+    section("超时与上限", "超时是从收到请求开始算的总时长；空闲超时只管流式响应两块数据之间。", [
+      field("默认 max_tokens（客户端没填时）", numberInput(draft.server.default_max_tokens, (next) => {
+        draft.server.default_max_tokens = next;
+      })),
+      field("请求体上限（MB）", numberInput(draft.server.max_body_mb, (next) => {
+        draft.server.max_body_mb = next;
+      }), "改动会重启监听"),
+      field("请求总超时（秒）", numberInput(draft.server.request_timeout_secs, (next) => {
+        draft.server.request_timeout_secs = next;
+      })),
+      field("流式空闲超时（秒）", numberInput(draft.server.stream_idle_timeout_secs, (next) => {
+        draft.server.stream_idle_timeout_secs = next;
+      })),
+    ]),
+    section("日志与跨源", "日志只存在内存里，重启窗口即清空。", [
+      field("日志保留条数", numberInput(draft.server.log_capacity, (next) => {
+        draft.server.log_capacity = next;
+      }), "实时生效，不丢已有记录"),
+      wide(
+        field(
+          "允许跨源的浏览器来源",
+          textInput(draft.server.allow_origins.join(", "), (next) => {
+            draft.server.allow_origins = next
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean);
+          }),
+          "例如 http://localhost:1420，或填 *",
+        ),
+      ),
+    ]),
+    section("行为开关", "", [
+      wide(
+        (() => {
+          const rows = el("div", "switch-rows");
+          rows.append(
+            switchRow(
+              "透传本项目未识别的请求参数",
+              "打开后，顶层不认识的参数原样发给上游；关闭则丢弃并记进日志的「转换丢弃」。",
+              draft.server.passthrough_unknown_params,
+              (next) => {
+                draft.server.passthrough_unknown_params = next;
+              },
+            ),
+            switchRow(
+              "向 OpenAI 上游索取 usage 块",
+              "关掉后流式响应不带 token 统计；个别对请求体挑剔的网关需要关闭。",
+              draft.server.openai_include_usage,
+              (next) => {
+                draft.server.openai_include_usage = next;
+              },
+            ),
+          );
+          return rows;
+        })(),
+      ),
+    ]),
   );
 
-  const switches = el("div", "inline");
-  switches.append(
-    toggle("透传本项目未识别的请求参数", draft.server.passthrough_unknown_params, (next) => {
-      draft.server.passthrough_unknown_params = next;
-    }),
-    toggle("向 OpenAI 上游索取 usage 块", draft.server.openai_include_usage, (next) => {
-      draft.server.openai_include_usage = next;
-    }),
-  );
-
-  card.append(head, note, live, grid, switches);
+  card.append(head, note, live, sections);
   host.append(card);
 }
 

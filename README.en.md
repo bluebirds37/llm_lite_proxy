@@ -74,6 +74,8 @@ One upstream is one model service. The **protocol family** is which protocol the
 
 ![Upstream configuration: protocol family, API surface, Base URL, key, model aliases and match patterns](docs/images/01-upstream-config.png)
 
+Each upstream is a card: the card header lets you rename it inline, shows the protocol summary and carries the enable switch; clicking the card (or its *Configure* button) expands the full form in place, and the opened card takes the whole row. The dashed card at the end is *Add upstream*.
+
 Everything you can set is on this page: the enabled switch, match patterns (glob), the model alias table (`public → upstream`), and extra request headers (the `anthropic-version`, `User-Agent` and similar that gateways require). *Test connection* sends one real request using what is currently in the form; you do not need to save first.
 
 ### Proxy settings
