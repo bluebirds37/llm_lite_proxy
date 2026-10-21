@@ -734,7 +734,7 @@ pre {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .pcard {
@@ -876,6 +876,7 @@ pre {
 }
 
 .pcard.add {
+  display: flex;
   position: relative;
   background: transparent;
   border-style: dashed;
@@ -888,12 +889,19 @@ pre {
   background: var(--accent-soft);
 }
 
+.pcard.add:hover .add-label,
+.pcard.add:focus-within .add-label {
+  color: var(--accent);
+}
+
+/* One centred line, so the tile is exactly as tall as a collapsed card. */
 .add-inner {
   display: flex;
-  flex-direction: column;
+  flex: 1;
   align-items: center;
-  gap: 5px;
-  padding: 22px 14px 26px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
   text-align: center;
   pointer-events: none;
 }
@@ -916,7 +924,8 @@ pre {
 }
 
 .add-glyph {
-  font-size: 21px;
+  font-size: 18px;
+  font-weight: 600;
   line-height: 1;
   color: var(--accent);
 }

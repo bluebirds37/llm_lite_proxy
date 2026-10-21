@@ -350,13 +350,12 @@ function addCard(): HTMLElement {
   glyph.textContent = "+";
   const label = el("span", "add-label");
   label.textContent = "添加上游";
-  const hint = el("span", "hint");
-  hint.textContent = "一个上游就是一个模型服务";
-  inner.append(glyph, label, hint);
+  inner.append(glyph, label);
 
   const hit = el("button", "add-hit");
   hit.type = "button";
   hit.setAttribute("aria-label", "添加上游");
+  hit.title = "一个上游就是一个模型服务";
   hit.addEventListener("click", () => {
     draft.providers.push(newProvider(draft.providers.length));
     selected = draft.providers.length - 1;
