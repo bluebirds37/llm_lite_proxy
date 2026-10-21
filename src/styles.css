@@ -876,12 +876,14 @@ pre {
 }
 
 .pcard.add {
+  position: relative;
   background: transparent;
   border-style: dashed;
   box-shadow: none;
 }
 
-.pcard.add:hover {
+.pcard.add:hover,
+.pcard.add:focus-within {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
@@ -890,14 +892,27 @@ pre {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 5px;
-  width: 100%;
   padding: 22px 14px 26px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.add-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
   background: none;
   border: none;
-  color: var(--muted);
+  border-radius: inherit;
   cursor: pointer;
+}
+
+.add-hit:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
 }
 
 .add-glyph {

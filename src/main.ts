@@ -342,16 +342,22 @@ function seedExamples(): void {
 
 function addCard(): HTMLElement {
   const card = el("article", "pcard add");
-  const button = el("button", "add-inner");
-  button.type = "button";
+
+  // A <button> cannot be the flex column here: its children collapse to zero
+  // height, so the text is laid out as an overlay and spills past the border.
+  const inner = el("div", "add-inner");
   const glyph = el("span", "add-glyph");
   glyph.textContent = "+";
   const label = el("span", "add-label");
   label.textContent = "添加上游";
   const hint = el("span", "hint");
   hint.textContent = "一个上游就是一个模型服务";
-  button.append(glyph, label, hint);
-  button.addEventListener("click", () => {
+  inner.append(glyph, label, hint);
+
+  const hit = el("button", "add-hit");
+  hit.type = "button";
+  hit.setAttribute("aria-label", "添加上游");
+  hit.addEventListener("click", () => {
     draft.providers.push(newProvider(draft.providers.length));
     selected = draft.providers.length - 1;
     renderProviders();
@@ -359,7 +365,8 @@ function addCard(): HTMLElement {
       .querySelector<HTMLInputElement>("#panel-providers .pcard.open input[data-name]")
       ?.focus();
   });
-  card.append(button);
+
+  card.append(inner, hit);
   return card;
 }
 
