@@ -63,7 +63,7 @@ npx tauri build --bundles deb,appimage
 
 `.github/workflows/build.yml` 是 Windows / macOS / Linux 三平台矩阵，`push tag v*` 或手动触发时构建安装包并上传为 Actions 产物；打 tag 时同时挂到 GitHub Release。
 
-> 这份 workflow 已在 2026-10-20 跑通一次三平台矩阵：Windows 出 `nsis` + `msi`，macOS 在 Apple Silicon runner 上出 arm64 的 `dmg`（日志里 `file` 显示 `Mach-O 64-bit executable arm64`），Ubuntu 22.04 出 `deb` + `AppImage`。但**只有 Windows 的产物在本机真正装过、跑过**，另两个平台属于「构建通过、未实机运行」。
+> 这份 workflow 自 2026-10-20 起已多次跑通三平台矩阵：Windows 出 `nsis` + `msi`，macOS 在 Apple Silicon runner 上出 arm64 的 `dmg`（日志里 `runner arch: arm64`，产物名 `*_aarch64.dmg`），Ubuntu 22.04 出 `deb` + `AppImage`。但**只有 Windows 的产物在本机真正装过、跑过**，另两个平台属于「构建通过、未实机运行」。打 `v*` tag 时这些产物会自动挂到对应的 GitHub Release。
 
 ## 发布检查
 

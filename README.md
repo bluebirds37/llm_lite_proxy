@@ -208,7 +208,7 @@ cargo test --workspace --exclude desktop   # 只跑协议层与代理层测试
 | macOS | `npx tauri build --bundles dmg,app` | `target/release/bundle/macos/*.app`、`dmg/*_aarch64.dmg` | CI 构建通过（Apple Silicon runner，arm64），未实机运行 |
 | Linux | `npx tauri build --bundles deb,appimage` | `target/release/bundle/{deb,appimage}/` | CI 构建通过，未实机运行 |
 
-三平台的 CI 构建已在 2026-10-20 跑通一次；「未实机运行」指没人真的在 macOS / Linux 上装起来点过，两者不是一回事。macOS / Linux 的系统依赖与 CI 出包见 **[docs/build.md](docs/build.md)**。
+三平台的 CI 构建已经跑通多次（2026-10-20 起，最近一次就在当前发布的提交上）；「未实机运行」指没人真的在 macOS / Linux 上装起来点过，两者不是一回事。macOS / Linux 的系统依赖与 CI 出包见 **[docs/build.md](docs/build.md)**。
 
 ## 项目结构
 
@@ -250,4 +250,4 @@ cargo test --workspace --exclude desktop   # 只跑协议层与代理层测试
 
 ## 许可
 
-[MIT](LICENSE)。实现参考了 [litellm](https://github.com/BerriAI/litellm) 的字段映射规则，但这是独立的 Rust 实现，不依赖 litellm。
+[MIT](LICENSE) · [更新日志](CHANGELOG.md)。实现参考了 [litellm](https://github.com/BerriAI/litellm) 的字段映射规则，但这是独立的 Rust 实现，不依赖 litellm。

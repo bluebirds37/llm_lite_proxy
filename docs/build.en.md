@@ -63,7 +63,7 @@ The `rpm` target needs `rpmbuild` present in the environment, and `appimage` nee
 
 `.github/workflows/build.yml` is a Windows / macOS / Linux three-platform matrix: it builds the installers on `push tag v*` or manual trigger and uploads them as Actions artifacts; on a tag they are also attached to the GitHub Release.
 
-> This workflow ran once across the three-platform matrix on 2026-10-20: Windows produced `nsis` + `msi`, macOS produced an arm64 `dmg` on an Apple Silicon runner (`file` in the log reports `Mach-O 64-bit executable arm64`), and Ubuntu 22.04 produced `deb` + `AppImage`. Only the Windows artifact has actually been installed and run, though — the other two are "builds green, never launched on real hardware".
+> This workflow has built green across the three-platform matrix several times since 2026-10-20: Windows produces `nsis` + `msi`, macOS produces an arm64 `dmg` on an Apple Silicon runner (`runner arch: arm64` in the log, artifact named `*_aarch64.dmg`), and Ubuntu 22.04 produces `deb` + `AppImage`. Only the Windows artifact has actually been installed and run, though — the other two are "builds green, never launched on real hardware". Pushing a `v*` tag attaches these artifacts to the matching GitHub Release.
 
 ## Release checks
 

@@ -208,7 +208,7 @@ Bundled artifacts per platform:
 | macOS | `npx tauri build --bundles dmg,app` | `target/release/bundle/macos/*.app`, `dmg/*_aarch64.dmg` | Builds in CI (Apple Silicon runner, arm64); never run on real hardware |
 | Linux | `npx tauri build --bundles deb,appimage` | `target/release/bundle/{deb,appimage}/` | Builds in CI; never run on real hardware |
 
-All three platforms built once in CI on 2026-10-20; "never run on real hardware" means nobody actually installed and clicked through the result on macOS / Linux — those are different claims. macOS / Linux system dependencies and CI packaging: see **[docs/build.en.md](docs/build.en.md)**.
+All three platforms have built green in CI repeatedly (since 2026-10-20, most recently on the commit being released); "never launched on real hardware" means nobody actually installed and clicked through the result on macOS / Linux — those are different claims. macOS / Linux system dependencies and CI packaging: see **[docs/build.en.md](docs/build.en.md)**.
 
 ## Project layout
 
@@ -250,4 +250,4 @@ A standard Tauri 2 layout: the repository root is the frontend, `src-tauri/` is 
 
 ## License
 
-[MIT](LICENSE). The implementation follows field mapping rules worked out from [litellm](https://github.com/BerriAI/litellm), but this is an independent Rust implementation and does not depend on litellm.
+[MIT](LICENSE) · [Changelog](CHANGELOG.md). The implementation follows field mapping rules worked out from [litellm](https://github.com/BerriAI/litellm), but this is an independent Rust implementation and does not depend on litellm.
