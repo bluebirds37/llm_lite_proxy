@@ -679,15 +679,57 @@ pre {
   height: 100%;
 }
 
-/* Upstream cards: a responsive grid of summaries. The card being configured
-   spans the whole row so its form has room, the rest stay as one-line cards. */
-#panel-providers > .card {
+/* First-run state: the brand mark, one sentence, and two ways forward. */
+.empty {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
+  align-items: center;
+  gap: 10px;
+  padding: 44px 24px 40px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-lg);
 }
 
+.empty-glyph {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  background: linear-gradient(150deg, var(--accent), #9b5cf6);
+  color: #fff;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.empty-glyph svg {
+  width: 30px;
+  height: 30px;
+}
+
+.empty h3 {
+  margin: 6px 0 0;
+  font-size: 15.5px;
+  font-weight: 650;
+}
+
+.empty > p {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Upstream cards: a responsive grid of summaries. The card being configured
+   spans the whole row so its form has room, the rest stay as one-line cards. */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));

@@ -269,17 +269,45 @@ function renderProviders(): void {
 }
 
 function emptyProviders(): HTMLElement {
-  const card = el("div", "card");
+  const card = el("div", "empty");
+
+  const glyph = el("span", "empty-glyph");
+  glyph.setAttribute("aria-hidden", "true");
+  // Same mark as the header logo, so the empty state reads as "this app, not configured yet".
+  glyph.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h13l-3.5-3.5M21 16H8l3.5 3.5"/></svg>';
+
   const title = el("h3");
   title.textContent = "还没有上游";
-  const hint = el("p", "hint");
-  hint.textContent =
-    "一个上游就是一个模型服务。协议选它自己说哪种协议，跟客户端用哪种协议无关，两边不一样时会自动互转。";
-  const seed = el("button", "ghost");
+
+  const text = el("p");
+  text.textContent =
+    "一个上游就是一个模型服务：选协议、填地址和 Key 就行。协议选它自己说哪种，跟客户端用哪种无关，两边不一样时自动互转。";
+
+  const actions = el("div", "empty-actions");
+  const seed = el("button", "primary");
   seed.type = "button";
-  seed.textContent = "填入两条示例，再补 API Key";
+  seed.textContent = "填入两条示例";
   seed.addEventListener("click", seedExamples);
-  card.append(title, hint, seed);
+
+  const manual = el("button", "ghost");
+  manual.type = "button";
+  manual.textContent = "手动添加一个";
+  manual.addEventListener("click", () => {
+    draft.providers.push(newProvider(0));
+    selected = 0;
+    renderProviders();
+    document
+      .querySelector<HTMLInputElement>("#panel-providers .pcard.open input[data-name]")
+      ?.focus();
+  });
+
+  actions.append(seed, manual);
+
+  const note = el("p", "hint");
+  note.textContent = "示例只填名字与匹配模式，Key 留空，补上你的再保存。";
+
+  card.append(glyph, title, text, actions, note);
   return card;
 }
 

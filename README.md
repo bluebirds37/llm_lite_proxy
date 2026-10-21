@@ -39,7 +39,7 @@
 ![四步上手](docs/images/quickstart.svg)
 
 1. **装**：从 [Releases](https://github.com/bluebirds37/llm_lite_proxy/releases) 下载对应平台的安装包，双击安装；或者从源码 `npm install && npx tauri dev`。
-2. **填上游**：打开「上游配置」。第一次是空的，点 **「填入两条示例，再补 API Key」** 会生成 `claude` 与 `openai` 两条，把 Key 填上即可。
+2. **填上游**：打开「上游配置」。第一次是空的，点 **「填入两条示例」** 会生成 `claude` 与 `openai` 两张卡片，把 Key 填上即可；想从零开始就点「手动添加一个」。
 3. **启动**：右上角点「启动」，默认监听 `http://127.0.0.1:8787`。改动停止输入后会自动保存，不需要手动点保存。
 4. **接客户端**：打开「客户端接入」，复制对应片段贴进终端就完事。
 
@@ -199,14 +199,14 @@ cargo test --workspace --exclude desktop   # 只跑协议层与代理层测试
 
 各平台的打包产物：
 
-| 平台 | 命令 | 产物 | 本机验证 |
+| 平台 | 命令 | 产物 | 验证 |
 | --- | --- | --- | --- |
-| Windows | `npx tauri build --bundles nsis` | `target/release/bundle/nsis/*_x64-setup.exe` | 已实测 |
-| Windows (MSI) | `npx tauri build --bundles msi` | `target/release/bundle/msi/*.msi` | 需先联网装 WiX |
-| macOS | `npx tauri build --bundles dmg,app` | `target/release/bundle/macos/*.app`、`dmg/*.dmg` | 未实测 |
-| Linux | `npx tauri build --bundles deb,rpm,appimage` | `target/release/bundle/{deb,rpm,appimage}/` | 未实测 |
+| Windows | `npx tauri build --bundles nsis` | `target/release/bundle/nsis/*_x64-setup.exe` | 本机实测 |
+| Windows (MSI) | `npx tauri build --bundles msi` | `target/release/bundle/msi/*.msi` | CI 产出过；本机要先联网装 WiX |
+| macOS | `npx tauri build --bundles dmg,app` | `target/release/bundle/macos/*.app`、`dmg/*_aarch64.dmg` | CI 构建通过（Apple Silicon runner，arm64），未实机运行 |
+| Linux | `npx tauri build --bundles deb,appimage` | `target/release/bundle/{deb,appimage}/` | CI 构建通过，未实机运行 |
 
-macOS / Linux 的系统依赖与 CI 出包见 **[docs/build.md](docs/build.md)**。
+三平台的 CI 构建已在 2026-10-20 跑通一次；「未实机运行」指没人真的在 macOS / Linux 上装起来点过，两者不是一回事。macOS / Linux 的系统依赖与 CI 出包见 **[docs/build.md](docs/build.md)**。
 
 ## 项目结构
 

@@ -39,7 +39,7 @@ Fill in the upstream, fill in the key, press Start. From then on either side wor
 ![Four steps](docs/images/quickstart.svg)
 
 1. **Install**: grab the installer for your platform from [Releases](https://github.com/bluebirds37/llm_lite_proxy/releases) and double-click it; or from source, `npm install && npx tauri dev`.
-2. **Fill in the upstreams**: open *Upstream configuration*. The first time it is empty — clicking **"Fill in two examples, then add the API key"** generates one `claude` and one `openai` entry, and you only have to add the keys.
+2. **Fill in the upstreams**: open *Upstream configuration*. The first time it is empty — clicking **"Fill in two examples"** generates a `claude` and an `openai` card, and you only have to add the keys; start from scratch with *Add one manually* instead.
 3. **Start**: click *Start* in the top-right corner; it listens on `http://127.0.0.1:8787` by default. Changes are saved automatically once you stop typing, so there is no save button to press.
 4. **Connect a client**: open *Client access*, copy the snippet you need and paste it into a terminal.
 
@@ -199,14 +199,14 @@ cargo test --workspace --exclude desktop   # run only the protocol-layer and pro
 
 Bundled artifacts per platform:
 
-| Platform | Command | Artifact | Verified locally |
+| Platform | Command | Artifact | Verification |
 | --- | --- | --- | --- |
-| Windows | `npx tauri build --bundles nsis` | `target/release/bundle/nsis/*_x64-setup.exe` | Tested |
-| Windows (MSI) | `npx tauri build --bundles msi` | `target/release/bundle/msi/*.msi` | Needs WiX installed first, over the network |
-| macOS | `npx tauri build --bundles dmg,app` | `target/release/bundle/macos/*.app`, `dmg/*.dmg` | Not tested |
-| Linux | `npx tauri build --bundles deb,rpm,appimage` | `target/release/bundle/{deb,rpm,appimage}/` | Not tested |
+| Windows | `npx tauri build --bundles nsis` | `target/release/bundle/nsis/*_x64-setup.exe` | Tested on this machine |
+| Windows (MSI) | `npx tauri build --bundles msi` | `target/release/bundle/msi/*.msi` | Built in CI; locally it needs the WiX Toolset downloaded first |
+| macOS | `npx tauri build --bundles dmg,app` | `target/release/bundle/macos/*.app`, `dmg/*_aarch64.dmg` | Builds in CI (Apple Silicon runner, arm64); never run on real hardware |
+| Linux | `npx tauri build --bundles deb,appimage` | `target/release/bundle/{deb,appimage}/` | Builds in CI; never run on real hardware |
 
-macOS / Linux system dependencies and CI packaging: see **[docs/build.en.md](docs/build.en.md)**.
+All three platforms built once in CI on 2026-10-20; "never run on real hardware" means nobody actually installed and clicked through the result on macOS / Linux — those are different claims. macOS / Linux system dependencies and CI packaging: see **[docs/build.en.md](docs/build.en.md)**.
 
 ## Project layout
 
