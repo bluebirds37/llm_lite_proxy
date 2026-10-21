@@ -70,11 +70,13 @@ Silent command-line use works as well: `LLM Lite Proxy_x64-setup.exe /S` to inst
 
 ### Upstream configuration
 
+Each upstream is a card: the card header lets you rename it inline, shows the protocol summary and carries the enable switch; clicking the card (or its *Configure* button) expands the full form in place, and the opened card takes the whole row. The dashed card at the end is *Add upstream*.
+
+![The upstream cards at a glance](docs/images/01-upstream-config.png)
+
 One upstream is one model service. The **protocol family** is which protocol the upstream itself speaks, independent of what the client speaks; the **API surface** decides the call path. The Base URL can be just the host, the host down to `/v1`, or the full endpoint path; left empty it falls back to the official address of that family.
 
-![Upstream configuration: protocol family, API surface, Base URL, key, model aliases and match patterns](docs/images/01-upstream-config.png)
-
-Each upstream is a card: the card header lets you rename it inline, shows the protocol summary and carries the enable switch; clicking the card (or its *Configure* button) expands the full form in place, and the opened card takes the whole row. The dashed card at the end is *Add upstream*.
+![One card expanded: interface, connection, model routing and extra headers](docs/images/06-upstream-card-open.png)
 
 Everything you can set is on this page: the enabled switch, match patterns (glob), the model alias table (`public → upstream`), and extra request headers (the `anthropic-version`, `User-Agent` and similar that gateways require). *Test connection* sends one real request using what is currently in the form; you do not need to save first.
 
