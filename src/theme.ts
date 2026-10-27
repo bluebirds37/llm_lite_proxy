@@ -21,7 +21,7 @@ function persist(theme: Theme): void {
 
 export function initThemeToggle(
   button: HTMLButtonElement,
-  onExplicitChange: (explicit: Theme | null) => void = () => {},
+  onThemeChange: (explicit: Theme | null, effective: Theme) => void = () => {},
 ): void {
   const light = window.matchMedia("(prefers-color-scheme: light)");
 
@@ -30,7 +30,7 @@ export function initThemeToggle(
     const theme = current();
     document.documentElement.dataset.theme = theme;
     button.title = theme === "dark" ? "切换到浅色主题" : "切换到深色主题";
-    onExplicitChange(stored());
+    onThemeChange(stored(), theme);
   };
 
   sync();

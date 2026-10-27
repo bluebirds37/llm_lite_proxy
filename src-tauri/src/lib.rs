@@ -237,11 +237,16 @@ fn open_config_path(app: State<'_, App>) -> String {
     app.path.display().to_string()
 }
 
-/// Paints the native title bar to match the panel. `null` hands the choice back
-/// to the system, which is what an operator who never touched the toggle wants.
+/// Paints the native title bar to match the panel. `theme` is the operator's
+/// explicit choice, `null` hands it back to the system; `effective` is what the
+/// panel is actually showing, and the colours follow that.
 #[tauri::command]
-fn set_window_theme(app: AppHandle, theme: Option<String>) -> Result<(), String> {
-    let theme = match theme.as_deref() {
+fn set_window_theme(
+    app: AppHandle,
+    theme: Option<String>,
+    effective: Option<String>,
+) -> Result<(), String> {
+    let explicit = match theme.as_deref() {
         None => None,
         Some("light") => Some(tauri::Theme::Light),
         Some("dark") => Some(tauri::Theme::Dark),
@@ -250,7 +255,59 @@ fn set_window_theme(app: AppHandle, theme: Option<String>) -> Result<(), String>
     let Some(window) = app.get_webview_window("main") else {
         return Ok(());
     };
-    window.set_theme(theme).map_err(|error| error.to_string())
+    window.set_theme(explicit).map_err(|error| error.to_string())?;
+    #[cfg(target_os = "windows")]
+    paint_caption(&window, effective.as_deref() != Some("light"));
+    Ok(())
+}
+
+/// Windows 11 lets the caption keep a colour, which is what makes the title bar
+/// read as part of the header instead of a separate strip. On Windows 10 the
+/// attribute is ignored and the immersive dark mode from `set_theme` remains.
+#[cfg(target_os = "windows")]
+fn paint_caption(window: &tauri::WebviewWindow, dark: bool) {
+    // COLORREF is 0x00BBGGRR; these mirror --surface and --text in styles.css.
+    let (caption, text) = if dark {
+        (0x0025_1A14u32, 0x00F5_EDE9u32) // #141A25 / #E9EDF5
+    } else {
+        (0x00FF_FFFFu32, 0x0025_1B16u32) // #FFFFFF / #161B25
+    };
+    let Ok(handle) = window.hwnd() else {
+        return;
+    };
+    let hwnd = handle.0 as isize;
+    for (attribute, colour) in [
+        (DWMWA_CAPTION_COLOR, caption),
+        (DWMWA_BORDER_COLOR, caption),
+        (DWMWA_TEXT_COLOR, text),
+    ] {
+        unsafe {
+            let _ = DwmSetWindowAttribute(
+                hwnd,
+                attribute,
+                &colour as *const u32 as *const core::ffi::c_void,
+                std::mem::size_of::<u32>() as u32,
+            );
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+const DWMWA_BORDER_COLOR: u32 = 34;
+#[cfg(target_os = "windows")]
+const DWMWA_CAPTION_COLOR: u32 = 35;
+#[cfg(target_os = "windows")]
+const DWMWA_TEXT_COLOR: u32 = 36;
+
+#[cfg(target_os = "windows")]
+#[link(name = "dwmapi")]
+extern "system" {
+    fn DwmSetWindowAttribute(
+        hwnd: isize,
+        attribute: u32,
+        value: *const core::ffi::c_void,
+        size: u32,
+    ) -> i32;
 }
 
 pub fn run() {

@@ -1068,10 +1068,11 @@ async function boot(): Promise<void> {
     });
   });
 
-  initThemeToggle($("#theme-toggle"), (explicit) => {
+  initThemeToggle($("#theme-toggle"), (explicit, effective) => {
     if (!inTauri) return;
-    // The CSS only paints the client area; the title bar needs the same call.
-    void call("set_window_theme", { theme: explicit }).catch(() => undefined);
+    // The CSS only paints the client area; the title bar needs the same call,
+    // and it follows the effective theme even when the choice is "follow system".
+    void call("set_window_theme", { theme: explicit, effective }).catch(() => undefined);
   });
   $("#save").addEventListener("click", () => void save());
   $("#toggle-run").addEventListener("click", () => void toggleRunning());

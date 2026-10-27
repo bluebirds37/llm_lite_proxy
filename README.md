@@ -104,7 +104,15 @@ Windows 安装包是 NSIS 生成的单文件 `LLM Lite Proxy_x.y.z_x64-setup.exe
 
 ### 主题
 
-右上角的圆形按钮在浅色与深色之间切换，默认跟随系统。切换时**窗口标题栏会跟着一起变**（Windows 走 DWM 的沉浸式深色标题栏，实测过；macOS / Linux 由同一套 Tauri 接口处理，未实测），不会出现深色面板顶在浅色标题栏下面的情况。选择记在 WebView 的 localStorage 里，不进配置文件——换机器重装不会带过去。
+右上角的圆形按钮在浅色与深色之间切换，默认跟随系统；选择记在 WebView 的 localStorage 里，不进配置文件——换机器重装不会带过去。标题栏跟着一起变，各平台做法不同：
+
+| 平台 | 标题栏 |
+| --- | --- |
+| Windows 11 | 沉浸式深色 + 用 `DWMWA_CAPTION_COLOR` / `DWMWA_TEXT_COLOR` 把标题栏底色和文字色调成与头部一致，看起来是同一条；Windows 10 没有 caption 颜色接口，只跟着深浅切换 |
+| macOS | overlay 标题栏：隐藏窗口标题，页面延伸到标题栏下方，红绿灯浮在应用头部左侧（头部为此留了 88px 且顶部留出拖动区） |
+| Linux | 没有等价接口，标题栏由 GTK 主题决定，这里只能跟随深浅 |
+
+只有 Windows 这条是在本机实际看过的；macOS 的 overlay 配置能编译、CI 也能出包，但没人真的在 Mac 上打开看过。
 
 ![深色主题下的请求日志](docs/images/05-dark-theme.png)
 

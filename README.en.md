@@ -104,7 +104,15 @@ Snippets generated from the current address and key, ready to copy: Claude Code 
 
 ### Theme
 
-The round button in the top-right corner switches between light and dark, following the system by default. The **window title bar changes with it** (on Windows through DWM's immersive dark title bar, tested; macOS / Linux go through the same Tauri API but are untested), so a dark panel never sits under a light title bar. The choice lives in the WebView's localStorage, not in the configuration file — so a reinstall on another machine does not carry it over.
+The round button in the top-right corner switches between light and dark, following the system by default; the choice lives in the WebView's localStorage, not in the configuration file, so a reinstall on another machine does not carry it over. The title bar follows along, and each platform does it differently:
+
+| Platform | Title bar |
+| --- | --- |
+| Windows 11 | Immersive dark mode plus `DWMWA_CAPTION_COLOR` / `DWMWA_TEXT_COLOR` so the caption takes the header's background and text colour and reads as the same strip; Windows 10 has no caption-colour API and only follows the light/dark switch |
+| macOS | Overlay title bar: the window title is hidden, the page runs under the title bar and the traffic lights float over the left of the app header (the header reserves 88px and a drag band for them) |
+| Linux | No equivalent API — the title bar belongs to the GTK theme, so only the light/dark switch carries over |
+
+Only the Windows path has actually been looked at on this machine; the macOS overlay configuration compiles and ships through CI, but nobody has opened it on a Mac.
 
 ![Request logs in the dark theme](docs/images/05-dark-theme.png)
 

@@ -136,6 +136,13 @@ main,
   flex-wrap: wrap;
 }
 
+/* Overlay title bar on macOS: the traffic lights float over the header, and the
+   top band is the window's drag region, so the header keeps both clear. */
+:root[data-os="mac"] .bar {
+  padding-left: 88px;
+  padding-top: 30px;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -896,6 +903,8 @@ pre {
 
 /* One centred line, so the tile is exactly as tall as a collapsed card. */
 .add-inner {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex: 1;
   align-items: center;
@@ -906,14 +915,20 @@ pre {
   pointer-events: none;
 }
 
-.add-hit {
-  position: absolute;
+/* The global button:hover background is more specific than a bare class, so it
+   has to be reset for every state or the overlay paints over the label. */
+.add-hit,
+.add-hit:hover,
+.add-hit:active {
+  background: none;
+  border: none;
+  box-shadow: none;
+  transform: none;
   inset: 0;
   width: 100%;
   height: 100%;
   padding: 0;
-  background: none;
-  border: none;
+  position: absolute;
   border-radius: inherit;
   cursor: pointer;
 }

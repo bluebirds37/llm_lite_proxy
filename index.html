@@ -15,6 +15,11 @@
       } catch {
         document.documentElement.dataset.theme = "dark";
       }
+      // macOS draws the traffic lights over the webview (overlay title bar),
+      // so the header has to keep its first 88px clear.
+      if (navigator.userAgent.includes("Macintosh")) {
+        document.documentElement.dataset.os = "mac";
+      }
     </script>
     <script type="module" src="/src/main.ts" defer></script>
   </head>
